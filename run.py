@@ -48,7 +48,7 @@ async def on_voice_state_update(member,before,after):
     if member == client.user:
         return
 
-    if not (after.deaf or after.mute or after.self_mute or after.afk or str(after.channel)=="None"):
+    if not (after.deaf or after.mute or after.self_mute or after.afk or str(after.channel)=="None" or len(after.channel.members) == 1):
         name = member.display_name
         if not os.path.isfile("voice/"+name+"mp3"):
             tts = gTTS(text=name+"さんが入室しました。",lang="ja")
