@@ -1,5 +1,4 @@
 import discord
-import pickle
 import time
 import os
 from gtts import gTTS
