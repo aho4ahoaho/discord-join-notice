@@ -6,6 +6,7 @@ from gtts import gTTS
 client = discord.Client()
 
 if not discord.opus.is_loaded() and os.name == "posix":
+    print("Opus is not loaded")
     exit()
 
 @client.event
@@ -66,6 +67,20 @@ async def on_voice_state_update(member,before,after):
     if str(after.channel)=="None" and len(before.channel.members) == 1:
         await member.guild.voice_client.disconnect()
 
+    if get_dir_size("voice")>100:
+        with os.scandir("voice") as File:
+            for entry in File:
+                if entry.name != "ELT.aac":
+                    os.remove(entry.name)
+        
+
+def get_dir_size(path='.'):
+    total = 0
+    with os.scandir(path) as it:
+        for entry in it:
+            if entry.is_file():
+                total += entry.stat().st_size
+    return int(total/1024/1204)
 
 try:
     with open("token","r") as token:
