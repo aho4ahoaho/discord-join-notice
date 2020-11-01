@@ -95,7 +95,7 @@ def tts_gen(name):
     except:
         tts_gen(name)
 
-#token読み込み、なければ空ファイル生成と警告
+#トークン読み込み、なければ引数、駄目なら警告を返して終了
 try:
     with open("token","r") as token:
         client.run(token.read())
