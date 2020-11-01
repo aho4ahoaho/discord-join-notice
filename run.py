@@ -99,6 +99,9 @@ try:
     with open("token","r") as token:
         client.run(token.read())
 except:
-    with open("token","a") as token:
-        token.write("")
-    print("token is not found")
+    try:
+        client.run(sys.argv[1])
+    except:
+        with open("token","a") as token:
+            token.write("")
+        print("tokenがありません")
