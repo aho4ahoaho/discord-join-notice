@@ -1,6 +1,7 @@
 import discord
 import time
 import os
+import sys
 from gtts import gTTS
 
 client = discord.Client()
