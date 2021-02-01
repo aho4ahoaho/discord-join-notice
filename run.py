@@ -55,7 +55,7 @@ async def on_voice_state_update(member,before,after):
         try:
             if before.selfstream:
                 return
-        exept:
+        except:
             pass
             
         #同じVoiceChannelに居ない場合は接続
