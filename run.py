@@ -50,7 +50,14 @@ async def on_voice_state_update(member,before,after):
         return
     
     #接続したら分岐
-    if not (after.deaf or after.mute or after.self_mute or after.self_deaf or after.self_stream or before.selfstream or after.afk or str(after.channel)=="None" or len(after.channel.members) == 1):
+    if not (after.deaf or after.mute or after.self_mute or after.self_deaf or after.self_stream or after.afk or str(after.channel)=="None" or len(after.channel.members) == 1):
+        #配信停止は弾く
+        try:
+            if before.selfstream:
+                return
+        exept:
+            pass
+            
         #同じVoiceChannelに居ない場合は接続
         if not client.user in member.voice.channel.members:
             await member.voice.channel.connect(reconnect=True)
