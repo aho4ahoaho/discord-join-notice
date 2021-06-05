@@ -5,13 +5,14 @@ import sys
 from gtts import gTTS
 
 client = discord.Client()
+appdir = os.path.dirname(os.path.abspath(__file__))
 
 @client.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
     #voiceフォルダ生成
-    if not os.path.isdir("voice"):
-        os.mkdir("voice")
+    if not os.path.isdir(appdir+"/voice"):
+        os.mkdir(appdir+"/voice")
             
 @client.event
 async def on_message(message):
@@ -20,7 +21,7 @@ async def on_message(message):
         return
 
     #!ELTに反応し、尚且ELT.aacが用意されいる場合のみ反応
-    if message.content.startswith("!ELT") and os.path.isfile("voice/ELT.aac"):
+    if message.content.startswith("!ELT") and os.path.isfile(appdir+"/voice/ELT.aac"):
         #VoiceChannelへの入室必須
         if not message.author.voice:
             return
@@ -31,7 +32,7 @@ async def on_message(message):
         voice_client = message.author.guild.voice_client
         if voice_client.is_playing():
             voice_client.stop()
-        voice_client.play(discord.FFmpegPCMAudio("voice/ELT.aac"))
+        voice_client.play(discord.FFmpegPCMAudio(appdir+"/voice/ELT.aac"))
     
     #!Etopで音声停止と切断
     if message.content.startswith("!Estop"):
@@ -63,14 +64,14 @@ async def on_voice_state_update(member,before,after):
             await member.voice.channel.connect(reconnect=True)
 
         #キャッシュになければ音声生成
-        if not os.path.isfile("voice/"+member.display_name+"_join.mp3"):
+        if not os.path.isfile(appdir+"/voice/"+member.display_name+"_join.mp3"):
             tts_gen(member.display_name)
         
         #音声再生
         voice_client = member.guild.voice_client
         if voice_client.is_playing():
             voice_client.stop()
-        voice_client.play(discord.FFmpegPCMAudio("voice/"+member.display_name+"_join.mp3"))
+        voice_client.play(discord.FFmpegPCMAudio(appdir+"/voice/"+member.display_name+"_join.mp3"))
 
 
     #最後の一人が居なくなったら切断
@@ -79,8 +80,8 @@ async def on_voice_state_update(member,before,after):
         return
     
     #キャッシュ容量が100MBを超えた場合削除
-    if get_dir_size("voice")>100:
-        with os.scandir("voice") as File:
+    if get_dir_size(appdir+"/voice")>100:
+        with os.scandir(appdir+"/voice") as File:
             for entry in File:
                 if entry.name != "ELT.aac":
                     os.remove(entry.name)
@@ -98,18 +99,18 @@ def get_dir_size(path='.'):
 def tts_gen(name):
     try:
         tts = gTTS(text=name+"さんが入室しました。",lang="ja")
-        tts.save("voice/"+name+"_join.mp3")
+        tts.save(appdir+"/voice/"+name+"_join.mp3")
     except:
         tts_gen(name)
 
 #トークン読み込み、なければ引数、駄目なら警告を返して終了
 try:
-    with open("token","r") as token:
+    with open(appdir+"/token","r") as token:
         client.run(token.read())
 except:
     try:
         client.run(sys.argv[1])
     except:
-        with open("token","a") as token:
+        with open(appdir+"/token","a") as token:
             token.write("")
         print("tokenがありません")
