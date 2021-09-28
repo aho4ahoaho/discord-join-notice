@@ -64,14 +64,14 @@ async def on_voice_state_update(member,before,after):
             await member.voice.channel.connect(reconnect=True)
 
         #キャッシュになければ音声生成
-        if not os.path.isfile(appdir+"/voice/"+member.display_name+"_join.mp3"):
-            tts_gen(member.display_name)
+        if not os.path.isfile(appdir+"/voice/"+str(member.display_name).replace("/","")+"_join.mp3"):
+            tts_gen(str(member.display_name).replace("/",""))
         
         #音声再生
         voice_client = member.guild.voice_client
         if voice_client.is_playing():
             voice_client.stop()
-        voice_client.play(discord.FFmpegPCMAudio(appdir+"/voice/"+member.display_name+"_join.mp3"))
+        voice_client.play(discord.FFmpegPCMAudio(appdir+"/voice/"+str(member.display_name).replace("/","")+"_join.mp3"))
 
 
     #最後の一人が居なくなったら切断
