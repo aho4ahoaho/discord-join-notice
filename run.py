@@ -1,8 +1,9 @@
 import discord
-import time
 import os
 import sys
-from gtts import gTTS
+import ffmpeg
+from gen_voice import gen_voice
+import re
 
 client = discord.Client()
 appdir = os.path.dirname(os.path.abspath(__file__))
@@ -33,6 +34,20 @@ async def on_message(message):
         if voice_client.is_playing():
             voice_client.stop()
         voice_client.play(discord.FFmpegPCMAudio(appdir+"/voice/ELT.aac"))
+
+    if message.content.startswith("!"):
+        if os.path.isfile(appdir+"/voice/"+str(message.content).replace("!","")+".aac"):
+            #VoiceChannelへの入室必須
+            if not message.author.voice:
+                return
+            #投稿者と同じVoiceChannelに居ない場合は接続
+            if not client.user in message.author.voice.channel.members:
+                await message.author.voice.channel.connect(reconnect=True)
+            #再生中の音源があれば止めてplay
+            voice_client = message.author.guild.voice_client
+            if voice_client.is_playing():
+                voice_client.stop()
+            voice_client.play(discord.FFmpegPCMAudio(appdir+"/voice/"+str(message.content).replace("!","")+".aac"))
     
     #!Etopで音声停止と切断
     if message.content.startswith("!Estop"):
@@ -81,9 +96,10 @@ async def on_voice_state_update(member,before,after):
     
     #キャッシュ容量が100MBを超えた場合削除
     if get_dir_size(appdir+"/voice")>100:
+        aac=re.compile(r".*.aac")
         with os.scandir(appdir+"/voice") as File:
             for entry in File:
-                if entry.name != "ELT.aac":
+                if aac.match(entry.name):
                     os.remove(entry.name)
         
 #voiceディレクトリのサイズチェック
@@ -95,13 +111,16 @@ def get_dir_size(path='.'):
                 total += entry.stat().st_size
     return int(total/1024/1204)
 
-#gTTsの生成、失敗した場合は再帰処理
+#ボイスの生成
 def tts_gen(name):
-    try:
-        tts = gTTS(text=name+"さんが入室しました。",lang="ja")
-        tts.save(appdir+"/voice/"+name+"_join.mp3")
-    except:
-        tts_gen(name)
+    text=name+"さんが入室しました。"
+
+    with open(appdir+"/voice/temp.wav","wb") as voice:
+        voice.write(gen_voice(text))
+    stream = ffmpeg.input(appdir+"/voice/temp.wav")
+    stream = ffmpeg.output(stream,appdir+"/voice/"+name+"_join.mp3")
+    ffmpeg.run(stream)
+    
 
 #トークン読み込み、なければ引数、駄目なら警告を返して終了
 try:
