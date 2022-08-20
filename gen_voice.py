@@ -4,7 +4,7 @@ import sys
 import json
 
 
-voicevox_url = "http://localhost:50021"
+voicevox_url = "http://192.168.1.18"
 
 def gen_voice(text):
     speaker=8

@@ -5,7 +5,9 @@ import ffmpeg
 from gen_voice import gen_voice
 import re
 
-client = discord.Client()
+intents=discord.Intents.all()
+intents.typing = False
+client = discord.Client(intents=intents)
 appdir = os.path.dirname(os.path.abspath(__file__))
 
 @client.event
@@ -20,20 +22,7 @@ async def on_message(message):
     #自分を無視
     if message.author == client.user:
         return
-
-    #!ELTに反応し、尚且ELT.aacが用意されいる場合のみ反応
-    if message.content.startswith("!ELT") and os.path.isfile(appdir+"/voice/ELT.aac"):
-        #VoiceChannelへの入室必須
-        if not message.author.voice:
-            return
-        #投稿者と同じVoiceChannelに居ない場合は接続
-        if not client.user in message.author.voice.channel.members:
-            await message.author.voice.channel.connect(reconnect=True)
-        #再生中の音源があれば止めてplay
-        voice_client = message.author.guild.voice_client
-        if voice_client.is_playing():
-            voice_client.stop()
-        voice_client.play(discord.FFmpegPCMAudio(appdir+"/voice/ELT.aac"))
+    print(message.content)
 
     if message.content.startswith("!"):
         if os.path.isfile(appdir+"/voice/"+str(message.content).replace("!","")+".aac"):
