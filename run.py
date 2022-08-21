@@ -22,7 +22,13 @@ async def on_message(message):
     #自分を無視
     if message.author == client.user:
         return
-    print(message.content)
+
+    if message.content.startswith("!tracklist"):
+        tracklist = list()
+        for f in os.listdir(appdir+"/voice/"):
+            if f.endswith(".aac"):
+                tracklist.append(f[:-4])
+        await message.channel.send(content="\n".join(tracklist),delete_after=20)
 
     if message.content.startswith("!"):
         if os.path.isfile(appdir+"/voice/"+str(message.content).replace("!","")+".aac"):
@@ -36,7 +42,8 @@ async def on_message(message):
             voice_client = message.author.guild.voice_client
             if voice_client.is_playing():
                 voice_client.stop()
-            voice_client.play(discord.FFmpegPCMAudio(appdir+"/voice/"+str(message.content).replace("!","")+".aac"))
+            voice_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(appdir+"/voice/"+str(message.content).replace("!","")+".aac"),volume=0.5))
+            return
     
     #!Etopで音声停止と切断
     if message.content.startswith("!Estop"):
