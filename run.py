@@ -25,13 +25,13 @@ async def on_message(message):
 
     if message.content.startswith("!tracklist"):
         tracklist = list()
-        for f in os.listdir(appdir+"/voice/"):
+        for f in os.listdir(appdir+"/track/"):
             if f.endswith(".aac"):
                 tracklist.append(f[:-4])
-        await message.channel.send(content="\n".join(tracklist),delete_after=20)
+        await message.channel.send(content="\n".join(sorted(tracklist))+"\n\n{}曲 {}MB".format(len(tracklist),get_dir_size(appdir+"/track")),delete_after=40)
 
     if message.content.startswith("!"):
-        if os.path.isfile(appdir+"/voice/"+str(message.content).replace("!","")+".aac"):
+        if os.path.isfile(appdir+"/track/"+str(message.content).replace("!","")+".aac"):
             #VoiceChannelへの入室必須
             if not message.author.voice:
                 return
@@ -42,7 +42,7 @@ async def on_message(message):
             voice_client = message.author.guild.voice_client
             if voice_client.is_playing():
                 voice_client.stop()
-            voice_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(appdir+"/voice/"+str(message.content).replace("!","")+".aac"),volume=0.5))
+            voice_client.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(appdir+"/track/"+str(message.content).replace("!","")+".aac"),volume=0.4))
             return
     
     #!Etopで音声停止と切断
@@ -92,11 +92,10 @@ async def on_voice_state_update(member,before,after):
     
     #キャッシュ容量が100MBを超えた場合削除
     if get_dir_size(appdir+"/voice")>100:
-        aac=re.compile(r".*.aac")
         with os.scandir(appdir+"/voice") as File:
             for entry in File:
-                if aac.match(entry.name):
-                    os.remove(entry.name)
+                if entry.name[-4:]!=".aac":
+                    os.remove(appdir+"/voice/"+entry.name)
         
 #voiceディレクトリのサイズチェック
 def get_dir_size(path='.'):
