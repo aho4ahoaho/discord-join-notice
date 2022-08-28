@@ -97,7 +97,7 @@ async def on_voice_state_update(member,before,after):
                 if entry.name[-4:]!=".aac":
                     os.remove(appdir+"/voice/"+entry.name)
         
-#voiceディレクトリのサイズチェック
+#ディレクトリのサイズチェック
 def get_dir_size(path='.'):
     total = 0
     with os.scandir(path) as it:
@@ -128,3 +128,6 @@ except:
         with open(appdir+"/token","a") as token:
             token.write("")
         print("tokenがありません")
+
+os.makedirs("voice",exist_ok=True)
+os.makedirs("track",exist_ok=True)
