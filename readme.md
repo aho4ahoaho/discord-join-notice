@@ -1,9 +1,9 @@
 # Discord-Join-Notice
 ## Overview
-ボイスチャンネルへの接続を通知するbotです。
+ボイスチャンネルへの接続を通知するbotです。gTTS使用版は[こちら](https://github.com/aho4ahoaho/discord-join-notice)
 ## Description
 接続通知用音声はvoiceフォルダへキャッシュしますので必要に応じてパラメータを変更して使用してください。
 ## Requirement
 - Python3 https://www.python.org/
 - discord.py https://github.com/Rapptz/discord.py
-- gTTs https://github.com/pndurette/gTTS
+- VOICEVOX https://github.com/VOICEVOX/voicevox_core
