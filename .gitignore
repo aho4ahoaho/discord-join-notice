@@ -2,4 +2,6 @@ token
 voice
 voice.wav
 track
+dev_romantokana.py
+dev_dict
 __pycache__
