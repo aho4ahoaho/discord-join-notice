@@ -15,8 +15,9 @@ appdir = os.path.dirname(os.path.abspath(__file__))
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
     # voiceフォルダ生成
-    if not os.path.isdir(appdir+"/voice"):
-        os.mkdir(appdir+"/voice")
+    os.makedirs(appdir+"/voice", exist_ok=True)
+    os.makedirs(appdir+"/track", exist_ok=True)
+
 
 
 @client.event
@@ -170,5 +171,4 @@ except:
             token.write("")
         print("tokenがありません")
 
-os.makedirs("voice", exist_ok=True)
-os.makedirs("track", exist_ok=True)
+
