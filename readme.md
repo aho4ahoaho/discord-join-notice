@@ -1,6 +1,6 @@
 # Discord-Join-Notice
 ## Overview
-ボイスチャンネルへの接続を通知するbotです。gTTS使用版は[こちら](https://github.com/aho4ahoaho/discord-join-notice)
+ボイスチャンネルへの接続を通知するbotです。gTTS使用版は[こちら](https://github.com/aho4ahoaho/discord-join-notice/tree/gtts)
 ## Description
 接続通知用音声はvoiceフォルダへキャッシュしますので必要に応じてパラメータを変更して使用してください。
 ## Requirement
