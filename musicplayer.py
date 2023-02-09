@@ -48,10 +48,9 @@ class MusicPlayer:
     def random(self):
         self.queue = random.sample(TrackList, len(TrackList))
 
-
     async def playlist(self):
         while True:
-            #キューが空なら終了
+            # キューが空なら終了
             if len(self.queue) == 0:
                 break
 
@@ -66,11 +65,11 @@ class MusicPlayer:
 
             # 曲の長さを取得する
             track_len = float(ffmpeg.probe(track_path)[
-                            "streams"][0]["duration"])
+                "streams"][0]["duration"])
             # 曲の長さだけスリープする
             await sleep(track_len)
 
-            while self.guild.voice_client.is_playing():
+            while self.playing_track == track and self.guild.voice_client.is_playing():
                 await sleep(3)
 
             # 現在再生している曲が自分だったら次の曲を流す

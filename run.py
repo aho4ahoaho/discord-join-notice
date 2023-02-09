@@ -12,7 +12,6 @@ intents.typing = False
 client = discord.Client(intents=intents)
 appdir = os.path.dirname(os.path.abspath(__file__))
 musicPlayers = {}
-scan_file()
 
 
 @client.event
@@ -21,6 +20,7 @@ async def on_ready():
     # voiceフォルダ生成
     os.makedirs(appdir+"/voice", exist_ok=True)
     os.makedirs(appdir+"/track", exist_ok=True)
+    scan_file()
 
 
 @client.event
@@ -78,7 +78,7 @@ async def on_message(message):
             return
         # サーバーに対応したプレイヤーが無ければ生成
         if not message.guild.id in musicPlayers.keys():
-            musicPlayers[message.guild.id] = MusicPlayer(client, message.guild)
+            return
         # 次の曲を再生
         await musicPlayers[message.guild.id].playlist()
 
