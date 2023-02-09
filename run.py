@@ -50,6 +50,12 @@ async def on_message(message):
         # 指定のファイルを再生
         await musicPlayers[message.guild.id].playlist()
         return
+    
+    if message.content.startswith("!reload"):
+        if not message.author.voice:
+            return
+        scan_file()
+        return
 
     #!stopで音声停止
     if message.content.startswith("!stop"):
