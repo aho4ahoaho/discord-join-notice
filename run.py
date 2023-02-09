@@ -1,15 +1,18 @@
 import discord
+from discord.ext import tasks
 import os
 import sys
 import ffmpeg
 from gen_voice import gen_voice
 import random
-from musicplayer import MusicPlayer,scan_file,TrackList
+from musicplayer import MusicPlayer, scan_file, TrackList
 
 intents = discord.Intents.all()
 intents.typing = False
 client = discord.Client(intents=intents)
 appdir = os.path.dirname(os.path.abspath(__file__))
+musicPlayers = {}
+scan_file()
 
 
 @client.event
@@ -18,7 +21,6 @@ async def on_ready():
     # voiceフォルダ生成
     os.makedirs(appdir+"/voice", exist_ok=True)
     os.makedirs(appdir+"/track", exist_ok=True)
-
 
 
 @client.event
@@ -31,17 +33,22 @@ async def on_message(message):
         return
 
     if message.content.startswith("!tracklist"):
-        await message.channel.send(content="\n".join(sorted(TrackList))+"\n\n{}曲 {}MB".format(len(TrackList), get_dir_size(appdir+"/track")), delete_after=40)
+        await message.channel.send(content="\n".join(sorted(TrackList))+"\n\n{}曲".format(len(TrackList)), delete_after=40)
         return
 
     if message.content.startswith("!random"):
-        tracklist = list()
-        for f in os.listdir(appdir+"/track/"):
-            if f.endswith(".aac"):
-                tracklist.append(f[:-4])
-        sound_path = appdir+"/track/" + \
-            tracklist[random.randint(0, len(tracklist)-1)]+".aac"
-        await play_sounds(message.author, sound_path, 0.4)
+        if not message.author.voice:
+            return
+
+        # サーバーに対応したプレイヤーが無ければ生成
+        if not message.guild.id in musicPlayers.keys():
+            musicPlayers[message.guild.id] = MusicPlayer(client, message.guild)
+        else:
+            musicPlayers[message.guild.id].random()
+        # ボイスチャンネルに接続
+        await musicPlayers[message.guild.id].connect(message.author)
+        # 指定のファイルを再生
+        await musicPlayers[message.guild.id].playlist()
         return
 
     #!stopで音声停止
@@ -49,33 +56,48 @@ async def on_message(message):
         if not message.author.voice:
             return
 
-        if client.user in message.author.voice.channel.members:
-            voice_client = message.author.guild.voice_client
-            voice_client.stop()
-            return
+        # サーバーに対応したプレイヤーがあれば停止
+        if message.guild.id in musicPlayers.keys():
+            musicPlayers[message.guild.id].stop()
+        return
 
     #!disconnectで音声停止と切断
     if message.content.startswith("!disconnect"):
         if not message.author.voice:
             return
 
-        if client.user in message.author.voice.channel.members:
-            voice_client = message.author.guild.voice_client
-            voice_client.stop()
-            await voice_client.disconnect()
+        # サーバーに対応したプレイヤーが無ければ切断して削除
+        if message.guild.id in musicPlayers.keys():
+            await musicPlayers[message.guild.id].disconnect()
+            musicPlayers.pop(message.guild.id)
+        return
+
+    #!skipで次の曲
+    if message.content.startswith("!skip"):
+        if not message.author.voice:
             return
+        # サーバーに対応したプレイヤーが無ければ生成
+        if not message.guild.id in musicPlayers.keys():
+            musicPlayers[message.guild.id] = MusicPlayer(client, message.guild)
+        # 次の曲を再生
+        await musicPlayers[message.guild.id].playlist()
 
     #!helpでヘルプ表示
     if message.content.startswith("!help"):
-        context = ["!tracklist : 再生可能な曲を表示", "!random : 再生可能な曲からランダムに再生",
+        context = ["!tracklist : 再生可能な曲を表示", "!random : ランダムなプレイリストを生成", "!skip : プレイリストの次の曲を再生",
                    "!stop : 再生中の曲を停止", "!disconnect : VCから切断"]
         await message.channel.send(content="\n".join(context), delete_after=120)
         return
 
-    sound_path = appdir+"/track/"+str(message.content).replace("!", "")+".aac"
-    if os.path.isfile(sound_path):
-        await play_sounds(message.author, sound_path, 0.4)
-        return
+    trackname = str(message.content).replace("!", "")
+    if trackname in TrackList:
+        # サーバーに対応したプレイヤーが無ければ生成
+        if not message.guild.id in musicPlayers.keys():
+            musicPlayers[message.guild.id] = MusicPlayer(client, message.guild)
+        # ボイスチャンネルに接続
+        await musicPlayers[message.guild.id].connect(message.author)
+        # 指定のファイルを再生
+        musicPlayers[message.guild.id].play(appdir+"/track/"+trackname+".aac")
 
 
 @client.event
@@ -102,11 +124,19 @@ async def on_voice_state_update(member, before, after):
         # キャッシュになければ音声生成
         if not os.path.isfile(sound_path):
             tts_gen(str(member.display_name).replace("/", ""))
-        await play_sounds(member, sound_path, 1)
+        # サーバーに対応したプレイヤーが無ければ生成
+        if not member.guild.id in musicPlayers.keys():
+            musicPlayers[member.guild.id] = MusicPlayer(client, member.guild)
+        # ボイスチャンネルに接続
+        await musicPlayers[member.guild.id].connect(member)
+        # 音声を再生
+        musicPlayers[member.guild.id].play(sound_path)
 
     # 最後の一人が居なくなったら切断
     if str(after.channel) == "None" and len(before.channel.members) == 1:
-        await member.guild.voice_client.disconnect()
+        if member.guild.id in musicPlayers.keys():
+            musicPlayers[member.guild.id].stop()
+            musicPlayers.pop(member.guild.id)
         return
 
     # キャッシュ容量が100MBを超えた場合削除
@@ -116,21 +146,6 @@ async def on_voice_state_update(member, before, after):
                 if entry.name[-4:] != ".aac":
                     os.remove(appdir+"/voice/"+entry.name)
 
-
-async def play_sounds(member, sound_path: str, volume: float = 0.5):
-    # VoiceChannelへの入室必須
-    if not member.voice:
-        return
-    # 投稿者と同じVoiceChannelに居ない場合は接続
-    if not client.user in member.voice.channel.members:
-        await member.voice.channel.connect(reconnect=True)
-    # 再生中の音源があれば止めてplay
-    voice_client = member.guild.voice_client
-    if voice_client.is_playing():
-        voice_client.stop()
-    voice_client.play(discord.PCMVolumeTransformer(
-        discord.FFmpegPCMAudio(sound_path), volume=volume))
-    return
 
 # ディレクトリのサイズチェック
 
@@ -167,5 +182,3 @@ except:
         with open(appdir+"/token", "a") as token:
             token.write("")
         print("tokenがありません")
-
-
