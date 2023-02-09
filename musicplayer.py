@@ -30,7 +30,7 @@ class MusicPlayer:
         voice_client = self.guild.voice_client
         if voice_client.is_playing():
             voice_client.stop()
-        await voice_client.disconnect()
+        await voice_client.cleanup()
 
     def play(self, sound_path):
         voice_client = self.guild.voice_client
@@ -69,6 +69,9 @@ class MusicPlayer:
                             "streams"][0]["duration"])
             # 曲の長さだけスリープする
             await sleep(track_len)
+
+            while self.guild.voice_client.is_playing():
+                await sleep(3)
 
             # 現在再生している曲が自分だったら次の曲を流す
             if self.playing_track != track:
