@@ -5,3 +5,4 @@ track
 dev_romantokana.py
 dev_dict
 __pycache__
+settings.json

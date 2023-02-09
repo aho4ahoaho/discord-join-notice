@@ -4,6 +4,7 @@ import sys
 import ffmpeg
 from gen_voice import gen_voice
 import random
+from musicplayer import MusicPlayer,scan_file,TrackList
 
 intents = discord.Intents.all()
 intents.typing = False
@@ -30,11 +31,7 @@ async def on_message(message):
         return
 
     if message.content.startswith("!tracklist"):
-        tracklist = list()
-        for f in os.listdir(appdir+"/track/"):
-            if f.endswith(".aac"):
-                tracklist.append(f[:-4])
-        await message.channel.send(content="\n".join(sorted(tracklist))+"\n\n{}曲 {}MB".format(len(tracklist), get_dir_size(appdir+"/track")), delete_after=40)
+        await message.channel.send(content="\n".join(sorted(TrackList))+"\n\n{}曲 {}MB".format(len(TrackList), get_dir_size(appdir+"/track")), delete_after=40)
         return
 
     if message.content.startswith("!random"):
