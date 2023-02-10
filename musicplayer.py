@@ -30,8 +30,8 @@ class MusicPlayer:
         voice_client = self.guild.voice_client
         if voice_client.is_playing():
             voice_client.stop()
-        await voice_client.cleanup()
         await voice_client.disconnect()
+        voice_client.cleanup()
 
     def play(self, sound_path):
         voice_client = self.guild.voice_client

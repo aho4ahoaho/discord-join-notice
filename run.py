@@ -141,8 +141,9 @@ async def on_voice_state_update(member, before, after):
     # 最後の一人が居なくなったら切断
     if str(after.channel) == "None" and len(before.channel.members) == 1:
         if member.guild.id in musicPlayers.keys():
-            musicPlayers[member.guild.id].stop()
+            await musicPlayers[member.guild.id].disconnect()
             musicPlayers.pop(member.guild.id)
+        print(musicPlayers)
         return
 
     # キャッシュ容量が100MBを超えた場合削除
