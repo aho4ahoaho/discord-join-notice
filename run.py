@@ -91,9 +91,16 @@ async def on_message(message):
     #!helpでヘルプ表示
     if message.content.startswith("!help"):
         context = ["!tracklist : 再生可能な曲を表示", "!random : ランダムなプレイリストを生成", "!skip : プレイリストの次の曲を再生",
-                   "!stop : 再生中の曲を停止", "!disconnect : VCから切断", "!pronunciation <読み> : 名前の読みを修正する"]
+                   "!stop : 再生中の曲を停止", "!disconnect : VCから切断", "!pronunciation <読み> : 名前の読みを修正する","!nowplaying : 現在再生中の曲を表示"]
         await message.channel.send(content="\n".join(context), delete_after=120)
         return
+
+    #!nowplayingで現在再生中の曲を表示
+    if message.content.startswith("!nowplaying"):
+        # サーバーに対応したプレイヤーが無ければ切断して削除
+        if message.guild.id in musicPlayers.keys():
+            context = musicPlayers[message.guild.id].playing_track
+            await message.channel.send(content=context, delete_after=20)
 
     #!pronunciationで読みの変更
     if message.content.startswith("!pronunciation"):
