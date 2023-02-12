@@ -50,7 +50,7 @@ async def on_message(message):
         # 指定のファイルを再生
         await musicPlayers[message.guild.id].playlist()
         return
-    
+
     if message.content.startswith("!reload"):
         if not message.author.voice:
             return
@@ -91,9 +91,21 @@ async def on_message(message):
     #!helpでヘルプ表示
     if message.content.startswith("!help"):
         context = ["!tracklist : 再生可能な曲を表示", "!random : ランダムなプレイリストを生成", "!skip : プレイリストの次の曲を再生",
-                   "!stop : 再生中の曲を停止", "!disconnect : VCから切断"]
+                   "!stop : 再生中の曲を停止", "!disconnect : VCから切断", "!pronunciation <読み> : 名前の読みを修正する"]
         await message.channel.send(content="\n".join(context), delete_after=120)
         return
+
+    #!pronunciationで読みの変更
+    if message.content.startswith("!pronunciation"):
+        if message.content[14:].strip() == "remove":
+            sound_path = appdir+"/voice/" + \
+                str(message.author.display_name).replace("/", "")+"_join.mp3"
+            # キャッシュになければ音声生成
+            if os.path.isfile(sound_path):
+                os.remove(sound_path)
+            return
+        tts_gen(str(message.author.display_name).replace(
+            "/", ""), message.content[14:].strip())
 
     trackname = str(message.content).replace("!", "")
     if trackname in TrackList:
@@ -143,7 +155,6 @@ async def on_voice_state_update(member, before, after):
         if member.guild.id in musicPlayers.keys():
             await musicPlayers[member.guild.id].disconnect()
             musicPlayers.pop(member.guild.id)
-        print(musicPlayers)
         return
 
     # キャッシュ容量が100MBを超えた場合削除
@@ -168,14 +179,16 @@ def get_dir_size(path='.'):
 # ボイスの生成
 
 
-def tts_gen(name):
+def tts_gen(name, pronunciation=""):
     text = name+"さんが入室しました。"
+    if (pronunciation != ""):
+        text = pronunciation+"さんが入室しました。"
 
     with open(appdir+"/voice/temp.wav", "wb") as voice:
         voice.write(gen_voice(text))
     stream = ffmpeg.input(appdir+"/voice/temp.wav")
     stream = ffmpeg.output(stream, appdir+"/voice/"+name+"_join.mp3")
-    ffmpeg.run(stream)
+    ffmpeg.run(stream, overwrite_output=True)
 
 
 # トークン読み込み、なければ引数、駄目なら警告を返して終了
