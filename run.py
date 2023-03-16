@@ -42,7 +42,7 @@ async def on_message(message):
 
         # サーバーに対応したプレイヤーが無ければ生成
         if not message.guild.id in musicPlayers.keys():
-            musicPlayers[message.guild.id] = MusicPlayer(client, message.guild)
+            musicPlayers[message.guild.id] = MusicPlayer(client, message.guild,0.25)
         else:
             musicPlayers[message.guild.id].random()
         # ボイスチャンネルに接続
