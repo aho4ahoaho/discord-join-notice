@@ -112,13 +112,13 @@ async def on_message(message):
                 os.remove(sound_path)
             return
         tts_gen(str(message.author.display_name).replace(
-            "/", ""), message.content[14:].strip())
+            "/", ""), message.content[14:46].strip())
 
     trackname = str(message.content).replace("!", "")
     if trackname in TrackList:
         # サーバーに対応したプレイヤーが無ければ生成
         if not message.guild.id in musicPlayers.keys():
-            musicPlayers[message.guild.id] = MusicPlayer(client, message.guild)
+            musicPlayers[message.guild.id] = MusicPlayer(client, message.guild,0.25)
         # ボイスチャンネルに接続
         await musicPlayers[message.guild.id].connect(message.author)
         # 指定のファイルを再生
@@ -155,7 +155,7 @@ async def on_voice_state_update(member, before, after):
         # ボイスチャンネルに接続
         await musicPlayers[member.guild.id].connect(member)
         # 音声を再生
-        musicPlayers[member.guild.id].play(sound_path)
+        musicPlayers[member.guild.id].play(sound_path,1.2)
 
     # 最後の一人が居なくなったら切断
     if str(after.channel) == "None" and len(before.channel.members) == 1:
