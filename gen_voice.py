@@ -2,9 +2,9 @@ import requests
 import romantokana
 import sys
 import json
+from os import getenv
 
-
-voicevox_url = "http://localhost:50021"
+voicevox_url = getenv("VOICEVOX_URL")
 
 def gen_voice(text):
     speaker=8
