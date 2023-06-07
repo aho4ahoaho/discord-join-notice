@@ -8,7 +8,7 @@ voicevox_url = getenv("VOICEVOX_URL")
 
 def gen_voice(text):
     speaker=8
-    text=romantokana.romankana(text)
+    text=romantokana.englishkana(text)
 
     query = requests.post(voicevox_url+'/audio_query', params={"speaker":speaker,"text":text})
     query = query.json()

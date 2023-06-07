@@ -167,19 +167,6 @@ def upperkana(text):
         text= text[:r.start()]+romankana(r.group(),True)+text[r.end():]
     return text
 
-AlphabetPattern = re.compile(r'[a-zA-Z]{1,}')
-def englishkana(text):
-    while True:
-        r = AlphabetPattern.search(text)
-        if r == None:
-            break
-        kana = alkana.get_kana(r.group())
-        if kana != None:
-            text = text[:r.start()]+kana+text[r.end():]
-        else:
-            text = text[:r.start()]+romankana(r.group())+text[r.end():]
-    return text
-
 AlphabetPattern = re.compile(r'[a-zA-Z]*')
 def englishkana(text):
     i = 0
