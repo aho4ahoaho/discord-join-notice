@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import discord
 from discord.ext import tasks
 import os
@@ -6,8 +9,7 @@ import ffmpeg
 from gen_voice import gen_voice
 import random
 from musicplayer import MusicPlayer, scan_file, TrackList
-from dotenv import load_dotenv
-load_dotenv()
+
 
 intents = discord.Intents.all()
 intents.typing = False
