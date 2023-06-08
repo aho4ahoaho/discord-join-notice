@@ -8,3 +8,4 @@ __pycache__
 .vscode
 userdict.json
 .env
+settings.json
