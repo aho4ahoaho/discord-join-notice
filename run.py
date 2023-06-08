@@ -9,6 +9,7 @@ import ffmpeg
 from gen_voice import gen_voice
 import random
 from musicplayer import MusicPlayer, scan_file, TrackList
+from get_phonetic import getPhonetic
 
 
 intents = discord.Intents.all()
@@ -191,10 +192,11 @@ def get_dir_size(path='.'):
 
 
 def tts_gen(name, pronunciation=""):
-    text = name+"さんが入室しました。"
+    yomi = name
     if (pronunciation != ""):
-        text = pronunciation+"さんが入室しました。"
-
+        yomi = pronunciation
+    yomi = getPhonetic(yomi.strip())
+    text = yomi+"さんが入室しました。"
     with open(appdir+"/voice/temp.wav", "wb") as voice:
         voice.write(gen_voice(text))
     stream = ffmpeg.input(appdir+"/voice/temp.wav")

@@ -1,14 +1,14 @@
 import requests
-from get_phonetic import getPhonetic
 import sys
 import json
 from os import getenv
+from romantokana import englishkana
 
 voicevox_url = getenv("VOICEVOX_URL")
 
 def gen_voice(text):
     speaker=8
-    text=getPhonetic(text)
+    #text = englishkana(text)
 
     query = requests.post(voicevox_url+'/audio_query', params={"speaker":speaker,"text":text})
     query = query.json()
