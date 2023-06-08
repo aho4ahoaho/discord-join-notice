@@ -57,8 +57,8 @@ class MusicPlayer:
     async def playlist(self):
         while True:
             # キューが空なら終了
-            if len(self.queue) == 0:
-                break
+            if len(self.queue) == self.index:
+                self.index = 0
 
             # キューから曲を取り出す
             track = self.queue[self.index]
