@@ -1,0 +1,5 @@
+alkana==0.0.3
+discord==2.1.0
+discord.py==2.2.2
+ffmpeg-python==0.2.0
+python-dotenv==1.0.0

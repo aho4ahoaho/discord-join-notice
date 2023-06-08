@@ -1,138 +1,195 @@
 import sys
 import re
+import alkana
+import os
 
-worddict={
-    "intel":"いんてる",
-    "amd":"えーえむでぃー",
-    "cpu":"しーぴーゆー",
-    "message":"めっせーじ",
-    "log":"ろぐ",
-    }
+userdict = {}
+if os.path.isfile("userdict.json"):
+    import json
+    with open("userdict.json","r") as f:
+        userdict = json.load(f)
 
 romantable = {
-    "ka":"か",
-    "ki":"き",
-    "ku":"く",
-    "ke":"け",
-    "ko":"こ",
+    "ka": "か",
+    "ki": "き",
+    "ku": "く",
+    "ke": "け",
+    "ko": "こ",
 
-    "ga":"が",
-    "gi":"ぎ",
-    "gu":"ぐ",
-    "ge":"げ",
-    "go":"ご",
-
-
-    "sa":"さ",
-    "si":"し",
-    "su":"す",
-    "se":"せ",
-    "so":"そ",
-
-    "za":"ざ",
-    "zi":"じ",
-    "zu":"ず",
-    "ze":"ぜ",
-    "zo":"ぞ",
-
-    "ji":"じ",
+    "ga": "が",
+    "gi": "ぎ",
+    "gu": "ぐ",
+    "ge": "げ",
+    "go": "ご",
 
 
-    "ta":"た",
-    "ti":"ち",
-    "tu":"つ",
-    "te":"て",
-    "to":"と",
+    "sa": "さ",
+    "si": "し",
+    "su": "す",
+    "se": "せ",
+    "so": "そ",
 
-    "da":"だ",
-    "di":"ぢ",
-    "du":"づ",
-    "de":"で",
-    "do":"ど",
+    "za": "ざ",
+    "zi": "じ",
+    "zu": "ず",
+    "ze": "ぜ",
+    "zo": "ぞ",
 
-
-    "na":"な",
-    "ni":"に",
-    "nu":"ぬ",
-    "ne":"ね",
-    "no":"の",
+    "ji": "じ",
 
 
-    "ha":"は",
-    "hi":"ひ",
-    "hu":"ふ",
-    "he":"へ",
-    "ho":"ほ",
+    "ta": "た",
+    "ti": "ち",
+    "tu": "つ",
+    "te": "て",
+    "to": "と",
 
-    "ba":"ば",
-    "bi":"び",
-    "bu":"ぶ",
-    "be":"べ",
-    "bo":"ぼ",
-
-    "pa":"ぱ",
-    "pi":"ぴ",
-    "pu":"ぷ",
-    "pe":"ぷ",
-    "po":"ぽ",
+    "da": "だ",
+    "di": "ぢ",
+    "du": "づ",
+    "de": "で",
+    "do": "ど",
 
 
-    "ma":"ま",
-    "mi":"み",
-    "mu":"む",
-    "me":"め",
-    "mo":"も",
+    "na": "な",
+    "ni": "に",
+    "nu": "ぬ",
+    "ne": "ね",
+    "no": "の",
 
-    "ya":"や",
-    "yu":"ゆ",
-    "yo":"よ",
 
-    "ra":"ら",
-    "ri":"り",
-    "ru":"る",
-    "re":"れ",
-    "ro":"ろ",
+    "ha": "は",
+    "hi": "ひ",
+    "hu": "ふ",
+    "he": "へ",
+    "ho": "ほ",
 
-    "wa":"わ",
-    "wo":"を",
+    "ba": "ば",
+    "bi": "び",
+    "bu": "ぶ",
+    "be": "べ",
+    "bo": "ぼ",
 
-    "nn":"ん",
+    "pa": "ぱ",
+    "pi": "ぴ",
+    "pu": "ぷ",
+    "pe": "ぷ",
+    "po": "ぽ",
+
+
+    "ma": "ま",
+    "mi": "み",
+    "mu": "む",
+    "me": "め",
+    "mo": "も",
+
+    "ya": "や",
+    "yu": "ゆ",
+    "yo": "よ",
+
+    "ra": "ら",
+    "ri": "り",
+    "ru": "る",
+    "re": "れ",
+    "ro": "ろ",
+
+    "wa": "わ",
+    "wo": "を",
+
+    "nn": "ん",
 }
 
-lowercase={
-    "a":"あ",
-    "b":"ぶ",
-    "c":"く",
-    "d":"で",
-    "e":"え",
-    "f":"ふ",
-    "g":"ぐ",
-    "h":"ふ",
-    "i":"い",
-    "j":"じ",
-    "k":"く",
-    "l":"れ",
-    "m":"む",
-    "n":"ぬ",
-    "o":"お",
-    "p":"ぷ",
-    "q":"く",
-    "r":"る",
-    "s":"す",
-    "t":"つ",
-    "u":"う",
-    "x":"くす",
-    "y":"い",
-    "z":"ず",
+lowercase = {
+    "a": "あ",
+    "b": "ぶ",
+    "c": "く",
+    "d": "で",
+    "e": "え",
+    "f": "ふ",
+    "g": "ぐ",
+    "h": "ふ",
+    "i": "い",
+    "j": "じ",
+    "k": "く",
+    "l": "れ",
+    "m": "む",
+    "n": "ぬ",
+    "o": "お",
+    "p": "ぷ",
+    "q": "く",
+    "r": "る",
+    "s": "す",
+    "t": "つ",
+    "u": "う",
+    "x": "くす",
+    "y": "い",
+    "z": "ず",
 }
 
-replacements={**worddict ,**romantable,**lowercase}
+uppercase = {
+    "A": "エー",
+    "B": "ビー",
+    "C": "シー",
+    "D": "ディー",
+    "E": "イー",
+    "F": "エフ",
+    "G": "ジー",
+    "H": "エイチ",
+    "I": "アイ",
+    "J": "ジェイ",
+    "K": "ケー",
+    "L": "エル",
+    "M": "エム",
+    "N": "エヌ",
+    "O": "オー",
+    "P": "ピー",
+    "Q": "キュー",
+    "R": "アール",
+    "S": "エス",
+    "T": "ティー",
+    "U": "ユー",
+    "V": "ブイ",
+    "W": "ダブリュ",
+    "X": "エックス",
+    "Y": "ワイ",
+    "Z": "ゼット",
+}
 
-def romankana(text):
-    text=text.lower()
 
+replacements = {**userdict, **romantable, **lowercase, **uppercase}
+
+UppperPattern = re.compile(r'[A-Z]{2,}')
+def upperkana(text:str):
+    while True:
+        r = UppperPattern.search(text)
+        if r == None:
+            break
+        text= text[:r.start()]+romankana(r.group(),True)+text[r.end():]
+    return text
+
+AlphabetPattern = re.compile(r'[a-zA-Z]*')
+def englishkana(text:str):
+    i = 0
+    result = ""
+    for w in AlphabetPattern.findall(text):
+        if w == "":
+            result += text[i]
+            i+=1
+        else:
+            kana = alkana.get_kana(w)
+            if(kana !=None):
+                result += kana
+            else:
+                result += romankana(w,ignore_upper=True)
+            i+=len(w)
+        if i >= len(text):
+            break
+    return result
+
+def romankana(text:str,ignore_upper:bool=False):
+    if ignore_upper != True:
+        text=text.lower()
     text = re.sub('({})'.format('|'.join(map(re.escape, replacements.keys()))), lambda m: replacements[m.group()], text)
-
     return text
 
 if __name__=="__main__":
