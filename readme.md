@@ -6,6 +6,9 @@
 ## Environment
 - VOICEVOX_URL
     - VOICEVOX COREのURL
+- OPENAI_ORG_ID
+- OPENAI__API_KEY
+- DISCORD_API_KEY
 ## Requirement
 - Python3 https://www.python.org/
 - discord.py https://github.com/Rapptz/discord.py
