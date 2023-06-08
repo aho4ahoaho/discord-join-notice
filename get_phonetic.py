@@ -1,6 +1,8 @@
 import openai
 from os import getenv
 from romantokana import englishkana
+from dotenv import load_dotenv
+load_dotenv()
 
 OPENAI_API_KEY = getenv("OPENAI_API_KEY")
 OPENAI_ORG_ID = getenv("OPENAI_ORG_ID")
@@ -19,7 +21,7 @@ def getPhonetic(text: str):
         context = "次のゲーマーのユーザー名をひらがなにしてください。出力は読みだけです。\n{}".format(text)
         response = openai.ChatCompletion.create(
             model=MODEL,
-            messages=[{"role":"user","content":context}],
+            messages=[{"role": "user", "content": context}],
             max_tokens=60,
             temperature=0.0,
         )

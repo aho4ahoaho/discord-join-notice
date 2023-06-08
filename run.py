@@ -1,13 +1,11 @@
+from gen_voice import gen_voice
+from musicplayer import MusicPlayer, scan_file, TrackList
+from get_phonetic import getPhonetic
 import ffmpeg
-import sys
 import os
 from discord import Client, Message, Member, VoiceState, Intents
 from dotenv import load_dotenv
 load_dotenv()
-
-from get_phonetic import getPhonetic
-from musicplayer import MusicPlayer, scan_file, TrackList
-from gen_voice import gen_voice
 
 
 intents = Intents.all()
@@ -185,8 +183,6 @@ def get_dir_size(path='.'):
     return int(total/1024/1204)
 
 # ボイスの生成
-
-
 def tts_gen(name, pronunciation=""):
     yomi = name
     if (pronunciation != ""):
@@ -201,13 +197,6 @@ def tts_gen(name, pronunciation=""):
 
 
 # トークン読み込み、なければ引数、駄目なら警告を返して終了
-try:
-    with open(appdir+"/token", "r") as token:
-        client.run(token.read())
-except:
-    try:
-        client.run(sys.argv[1])
-    except:
-        with open(appdir+"/token", "a") as token:
-            token.write("")
-        print("tokenがありません")
+discord_key = os.getenv("DISCORD_API_KEY")
+if discord_key:
+    client.run(discord_key)
