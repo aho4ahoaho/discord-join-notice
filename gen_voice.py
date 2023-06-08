@@ -2,18 +2,14 @@ import requests
 import sys
 import json
 from os import getenv
-from romantokana import englishkana
 from dotenv import load_dotenv
 load_dotenv()
 
 
 voicevox_url = getenv("VOICEVOX_URL")
-
+speaker = 8
 
 def gen_voice(text: str):
-    speaker = 8
-    # text = englishkana(text)
-
     query = requests.post(voicevox_url+'/audio_query',
                           params={"speaker": speaker, "text": text})
     query = query.json()

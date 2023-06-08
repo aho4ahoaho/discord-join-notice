@@ -1,6 +1,6 @@
 from gen_voice import gen_voice
 from musicplayer import MusicPlayer, scan_file, TrackList
-from get_phonetic import getPhonetic
+from romantokana import englishkana
 import ffmpeg
 import os
 from discord import Client, Message, Member, VoiceState, Intents
@@ -174,7 +174,7 @@ async def on_voice_state_update(member: Member, before: VoiceState, after: Voice
 
 
 # ディレクトリのサイズチェック
-def get_dir_size(path='.'):
+def get_dir_size(path:str='.'):
     total = 0
     with os.scandir(path) as it:
         for entry in it:
@@ -182,12 +182,23 @@ def get_dir_size(path='.'):
                 total += entry.stat().st_size
     return int(total/1024/1204)
 
+
+# OPENAIのAPIキーをチェック
+openai_key = os.getenv("OPENAI_API_KEY")
+if openai_key:
+    from get_phonetic import getPhonetic
+else:
+    print("GPT less mode")
+
 # ボイスの生成
-def tts_gen(name, pronunciation=""):
-    yomi = name
+def tts_gen(name:str, pronunciation:str=""):
+    yomi = name.strip()
     if (pronunciation != ""):
         yomi = pronunciation
-    yomi = getPhonetic(yomi.strip())
+    if openai_key:
+        yomi = getPhonetic(yomi)
+    else:
+        yomi = englishkana(yomi)
     text = yomi+"さんが入室しました。"
     with open(appdir+"/voice/temp.wav", "wb") as voice:
         voice.write(gen_voice(text))
