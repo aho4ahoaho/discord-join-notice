@@ -1,6 +1,3 @@
-from get_phonetic import getPhonetic
-from musicplayer import MusicPlayer, scan_file, TrackList
-from gen_voice import gen_voice
 import ffmpeg
 import sys
 import os
@@ -8,14 +5,10 @@ from discord import Client, Message, Member, VoiceState, Intents
 from dotenv import load_dotenv
 load_dotenv()
 
-import discord
-from discord.ext import tasks
-import os
-import sys
-import ffmpeg
-from gen_voice import gen_voice
-import random
+from get_phonetic import getPhonetic
 from musicplayer import MusicPlayer, scan_file, TrackList
+from gen_voice import gen_voice
+
 
 intents = Intents.all()
 intents.typing = False
@@ -192,6 +185,8 @@ def get_dir_size(path='.'):
     return int(total/1024/1204)
 
 # ボイスの生成
+
+
 def tts_gen(name, pronunciation=""):
     yomi = name
     if (pronunciation != ""):
