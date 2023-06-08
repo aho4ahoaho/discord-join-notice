@@ -159,7 +159,7 @@ uppercase = {
 replacements = {**userdict, **romantable, **lowercase, **uppercase}
 
 UppperPattern = re.compile(r'[A-Z]{2,}')
-def upperkana(text):
+def upperkana(text:str):
     while True:
         r = UppperPattern.search(text)
         if r == None:
@@ -168,7 +168,7 @@ def upperkana(text):
     return text
 
 AlphabetPattern = re.compile(r'[a-zA-Z]*')
-def englishkana(text):
+def englishkana(text:str):
     i = 0
     result = ""
     for w in AlphabetPattern.findall(text):
@@ -186,7 +186,7 @@ def englishkana(text):
             break
     return result
 
-def romankana(text,ignore_upper=False):
+def romankana(text:str,ignore_upper:bool=False):
     if ignore_upper != True:
         text=text.lower()
     text = re.sub('({})'.format('|'.join(map(re.escape, replacements.keys()))), lambda m: replacements[m.group()], text)

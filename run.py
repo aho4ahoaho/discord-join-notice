@@ -1,3 +1,10 @@
+from get_phonetic import getPhonetic
+from musicplayer import MusicPlayer, scan_file, TrackList
+from gen_voice import gen_voice
+import ffmpeg
+import sys
+import os
+from discord import Client, Message, Member, VoiceState, Intents
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -9,12 +16,10 @@ import ffmpeg
 from gen_voice import gen_voice
 import random
 from musicplayer import MusicPlayer, scan_file, TrackList
-from get_phonetic import getPhonetic
 
-
-intents = discord.Intents.all()
+intents = Intents.all()
 intents.typing = False
-client = discord.Client(intents=intents)
+client = Client(intents=intents)
 appdir = os.path.dirname(os.path.abspath(__file__))
 musicPlayers = {}
 
@@ -29,7 +34,7 @@ async def on_ready():
 
 
 @client.event
-async def on_message(message):
+async def on_message(message: Message):
     # 自分を無視
     if message.author == client.user:
         return
@@ -47,7 +52,8 @@ async def on_message(message):
 
         # サーバーに対応したプレイヤーが無ければ生成
         if not message.guild.id in musicPlayers.keys():
-            musicPlayers[message.guild.id] = MusicPlayer(client, message.guild,0.25)
+            musicPlayers[message.guild.id] = MusicPlayer(
+                client, message.guild, 0.25)
         else:
             musicPlayers[message.guild.id].random()
         # ボイスチャンネルに接続
@@ -96,7 +102,7 @@ async def on_message(message):
     #!helpでヘルプ表示
     if message.content.startswith("!help"):
         context = ["!tracklist : 再生可能な曲を表示", "!random : ランダムなプレイリストを生成", "!skip : プレイリストの次の曲を再生",
-                   "!stop : 再生中の曲を停止", "!disconnect : VCから切断", "!pronunciation <読み> : 名前の読みを修正する","!nowplaying : 現在再生中の曲を表示"]
+                   "!stop : 再生中の曲を停止", "!disconnect : VCから切断", "!pronunciation <読み> : 名前の読みを修正する", "!nowplaying : 現在再生中の曲を表示"]
         await message.channel.send(content="\n".join(context), delete_after=120)
         return
 
@@ -123,7 +129,8 @@ async def on_message(message):
     if trackname in TrackList:
         # サーバーに対応したプレイヤーが無ければ生成
         if not message.guild.id in musicPlayers.keys():
-            musicPlayers[message.guild.id] = MusicPlayer(client, message.guild,0.25)
+            musicPlayers[message.guild.id] = MusicPlayer(
+                client, message.guild, 0.25)
         # ボイスチャンネルに接続
         await musicPlayers[message.guild.id].connect(message.author)
         # 指定のファイルを再生
@@ -131,36 +138,10 @@ async def on_message(message):
 
 
 @client.event
-async def on_voice_state_update(member, before, after):
+async def on_voice_state_update(member: Member, before: VoiceState, after: VoiceState):
     # 自分を無視
     if member == client.user:
         return
-
-    # 接続したら分岐
-    if not (after.deaf or after.mute or after.self_mute or after.self_deaf or after.self_stream or after.afk or str(after.channel) == "None" or len(after.channel.members) == 1):
-        # 配信停止は弾く
-        try:
-            if before.selfstream:
-                return
-        except:
-            pass
-
-        # VoiceChannelへの入室必須
-        if not member.voice:
-            return
-
-        sound_path = appdir+"/voice/" + \
-            str(member.display_name).replace("/", "")+"_join.mp3"
-        # キャッシュになければ音声生成
-        if not os.path.isfile(sound_path):
-            tts_gen(str(member.display_name).replace("/", ""))
-        # サーバーに対応したプレイヤーが無ければ生成
-        if not member.guild.id in musicPlayers.keys():
-            musicPlayers[member.guild.id] = MusicPlayer(client, member.guild)
-        # ボイスチャンネルに接続
-        await musicPlayers[member.guild.id].connect(member)
-        # 音声を再生
-        musicPlayers[member.guild.id].play(sound_path,1.2)
 
     # 最後の一人が居なくなったら切断
     if str(after.channel) == "None" and len(before.channel.members) == 1:
@@ -176,10 +157,32 @@ async def on_voice_state_update(member, before, after):
                 if entry.name[-4:] != ".aac":
                     os.remove(appdir+"/voice/"+entry.name)
 
+    # VoiceChannelへの入室必須
+    if not member.voice:
+        return
+    # beforeがミュートではないかつafterがミュートの場合はreturn
+    if (not before.mute and after.mute) or (not before.self_mute and after.self_mute):
+        return
+    # beforeが配信がオンでafterが配信オフの場合はreturn
+    if (before.self_stream != after.self_stream) or (before.self_video != after.self_video):
+        return
+
+    sound_path = appdir+"/voice/" + \
+        str(member.display_name).replace("/", "")+"_join.mp3"
+    # キャッシュになければ音声生成
+    if not os.path.isfile(sound_path):
+        tts_gen(str(member.display_name).replace("/", ""))
+    # サーバーに対応したプレイヤーが無ければ生成
+    if not member.guild.id in musicPlayers.keys():
+        musicPlayers[member.guild.id] = MusicPlayer(client, member.guild)
+    # ボイスチャンネルに接続
+    await musicPlayers[member.guild.id].connect(member)
+    # 音声を再生
+    musicPlayers[member.guild.id].play(sound_path, 1.2)
+    return
+
 
 # ディレクトリのサイズチェック
-
-
 def get_dir_size(path='.'):
     total = 0
     with os.scandir(path) as it:
@@ -189,8 +192,6 @@ def get_dir_size(path='.'):
     return int(total/1024/1204)
 
 # ボイスの生成
-
-
 def tts_gen(name, pronunciation=""):
     yomi = name
     if (pronunciation != ""):

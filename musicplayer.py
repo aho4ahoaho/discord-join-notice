@@ -1,4 +1,5 @@
 import discord
+from discord import Client,Member,Guild
 import ffmpeg
 import os
 import random
@@ -10,15 +11,16 @@ TrackList = []
 
 
 class MusicPlayer:
-    def __init__(self, client, guild, volume=1):
+    def __init__(self, client:Client, guild:Guild, volume:float=1):
         self.client = client
         self.guild = guild
         self.volume = volume
         self.playing_track = ""
         self.queue = random.sample(TrackList, len(TrackList))
+        self.index = 0
         pass
 
-    async def connect(self, member):
+    async def connect(self, member:Member):
         # VoiceChannelへの入室必須
         if not member.voice:
             return
@@ -33,7 +35,7 @@ class MusicPlayer:
         await voice_client.disconnect()
         voice_client.cleanup()
 
-    def play(self, sound_path,volume=-1):
+    def play(self, sound_path:str,volume:float=-1):
         if volume == -1:
             volume = self.volume
         voice_client = self.guild.voice_client
@@ -59,7 +61,8 @@ class MusicPlayer:
                 break
 
             # キューから曲を取り出す
-            track = self.queue.pop()
+            track = self.queue[self.index]
+            self.index+=1
             # パスを作る
             track_path = appdir+"/track/"+track+".aac"
             # 曲を再生する
