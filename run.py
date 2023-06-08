@@ -1,8 +1,7 @@
-from musicplayer import MusicPlayer, scan_file, TrackList
-import random
 from gen_voice import gen_voice
+from musicplayer import MusicPlayer, scan_file, TrackList
+from romantokana import englishkana
 import ffmpeg
-import sys
 import os
 from discord import Client, Message, Member, VoiceState, Intents
 from dotenv import load_dotenv
@@ -175,7 +174,7 @@ async def on_voice_state_update(member: Member, before: VoiceState, after: Voice
 
 
 # ディレクトリのサイズチェック
-def get_dir_size(path='.'):
+def get_dir_size(path:str='.'):
     total = 0
     with os.scandir(path) as it:
         for entry in it:
@@ -183,14 +182,24 @@ def get_dir_size(path='.'):
                 total += entry.stat().st_size
     return int(total/1024/1204)
 
+
+# OPENAIのAPIキーをチェック
+openai_key = os.getenv("OPENAI_API_KEY")
+if openai_key:
+    from get_phonetic import getPhonetic
+else:
+    print("GPT less mode")
+
 # ボイスの生成
-
-
-def tts_gen(name: str, pronunciation: str = ""):
-    text = name+"さんが入室しました。"
+def tts_gen(name:str, pronunciation:str=""):
+    yomi = name.strip()
     if (pronunciation != ""):
-        text = pronunciation+"さんが入室しました。"
-
+        yomi = pronunciation
+    if openai_key:
+        yomi = getPhonetic(yomi)
+    else:
+        yomi = englishkana(yomi)
+    text = yomi+"さんが入室しました。"
     with open(appdir+"/voice/temp.wav", "wb") as voice:
         voice.write(gen_voice(text))
     stream = ffmpeg.input(appdir+"/voice/temp.wav")
@@ -199,13 +208,6 @@ def tts_gen(name: str, pronunciation: str = ""):
 
 
 # トークン読み込み、なければ引数、駄目なら警告を返して終了
-try:
-    with open(appdir+"/token", "r") as token:
-        client.run(token.read())
-except:
-    try:
-        client.run(sys.argv[1])
-    except:
-        with open(appdir+"/token", "a") as token:
-            token.write("")
-        print("tokenがありません")
+discord_key = os.getenv("DISCORD_API_KEY")
+if discord_key:
+    client.run(discord_key)
