@@ -195,10 +195,11 @@ def tts_gen(name:str, pronunciation:str=""):
     yomi = name.strip()
     if (pronunciation != ""):
         yomi = pronunciation
-    if openai_key:
-        yomi = getPhonetic(yomi)
     else:
-        yomi = englishkana(yomi)
+        if openai_key:
+            yomi = getPhonetic(yomi)
+        else:
+            yomi = englishkana(yomi)
     text = yomi+"さんが入室しました。"
     with open(appdir+"/voice/temp.wav", "wb") as voice:
         voice.write(gen_voice(text))
