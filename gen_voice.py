@@ -6,7 +6,7 @@ from os import getenv
 
 voicevox_url = getenv("VOICEVOX_URL")
 
-def gen_voice(text):
+def gen_voice(text:str):
     speaker=8
     text=romantokana.englishkana(text)
 

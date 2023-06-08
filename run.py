@@ -4,15 +4,14 @@ from gen_voice import gen_voice
 import ffmpeg
 import sys
 import os
-from discord.ext import tasks
-import discord
+from discord import Client, Message, Member, VoiceState, Intents
 from dotenv import load_dotenv
 load_dotenv()
 
 
-intents = discord.Intents.all()
+intents = Intents.all()
 intents.typing = False
-client = discord.Client(intents=intents)
+client = Client(intents=intents)
 appdir = os.path.dirname(os.path.abspath(__file__))
 musicPlayers = {}
 
@@ -27,7 +26,7 @@ async def on_ready():
 
 
 @client.event
-async def on_message(message):
+async def on_message(message: Message):
     # 自分を無視
     if message.author == client.user:
         return
@@ -131,7 +130,7 @@ async def on_message(message):
 
 
 @client.event
-async def on_voice_state_update(member: discord.member, before: discord.VoiceState, after: discord.VoiceState):
+async def on_voice_state_update(member: Member, before: VoiceState, after: VoiceState):
     # 自分を無視
     if member == client.user:
         return
@@ -153,13 +152,12 @@ async def on_voice_state_update(member: discord.member, before: discord.VoiceSta
     # VoiceChannelへの入室必須
     if not member.voice:
         return
-    #beforeがミュートではないかつafterがミュートの場合はreturn
+    # beforeがミュートではないかつafterがミュートの場合はreturn
     if (not before.mute and after.mute) or (not before.self_mute and after.self_mute):
         return
-    #beforeが配信がオンでafterが配信オフの場合はreturn
+    # beforeが配信がオンでafterが配信オフの場合はreturn
     if (before.self_stream != after.self_stream) or (before.self_video != after.self_video):
         return
-
 
     sound_path = appdir+"/voice/" + \
         str(member.display_name).replace("/", "")+"_join.mp3"
@@ -186,7 +184,9 @@ def get_dir_size(path='.'):
     return int(total/1024/1204)
 
 # ボイスの生成
-def tts_gen(name, pronunciation=""):
+
+
+def tts_gen(name: str, pronunciation: str = ""):
     text = name+"さんが入室しました。"
     if (pronunciation != ""):
         text = pronunciation+"さんが入室しました。"
