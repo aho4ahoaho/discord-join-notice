@@ -1,9 +1,11 @@
 import discord
-from discord import Client,Member,Guild
+from discord import Client, Member, Guild
 import ffmpeg
 import os
 import random
 from asyncio import sleep
+from time import time
+from typing import Union
 
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -11,16 +13,16 @@ TrackList = []
 
 
 class MusicPlayer:
-    def __init__(self, client:Client, guild:Guild, volume:float=1):
+    def __init__(self, client: Client, guild: Guild, volume: float = 1):
         self.client = client
         self.guild = guild
         self.volume = volume
-        self.playing_track = ""
-        self.queue = random.sample(TrackList, len(TrackList))
+        self.timeStamp = 0
+        self.queue = random_track()
         self.index = 0
         pass
 
-    async def connect(self, member:Member):
+    async def connect(self, member: Member):
         # VoiceChannelへの入室必須
         if not member.voice:
             return
@@ -35,11 +37,23 @@ class MusicPlayer:
         await voice_client.disconnect()
         voice_client.cleanup()
 
-    def play(self, sound_path:str,volume:float=-1):
+    def random(self):
+        self.queue = random_track()
+
+    def now_playing(self) -> Union[str, None]:
+        if self.index > 0:
+            return self.queue[self.index-1]
+        else:
+            return None
+        
+    def get_playlist(self, all: bool = False):
+        return self.queue
+
+    def play(self, sound_path: str, volume: float = -1):
         if volume == -1:
             volume = self.volume
         voice_client = self.guild.voice_client
-        self.playing_track = ""
+        self.timeStamp = time()
         if voice_client.is_playing():
             voice_client.stop()
         voice_client.play(discord.PCMVolumeTransformer(
@@ -47,28 +61,37 @@ class MusicPlayer:
 
     def stop(self):
         voice_client = self.guild.voice_client
-        self.playing_track = ""
+        self.timeStamp = time()
         if voice_client.is_playing():
             voice_client.stop()
 
-    def random(self):
-        self.queue = random.sample(TrackList, len(TrackList))
+    async def resume(self):
+        if self.index > 0:
+            self.index -= 1
+        await self.playlist()
+
+    async def previous(self):
+        if self.index > 1:
+            self.index -= 2
+        await self.playlist()
 
     async def playlist(self):
         while True:
-            # キューが空なら終了
+            # キューの最後まで再生したらキューを更新する
             if len(self.queue) == self.index:
+                self.queue = random_track()
                 self.index = 0
 
             # キューから曲を取り出す
             track = self.queue[self.index]
-            self.index+=1
+            self.index += 1
             # パスを作る
             track_path = appdir+"/track/"+track+".aac"
             # 曲を再生する
             self.play(track_path)
             # 自分が再生した曲を覚える
-            self.playing_track = track
+            timeStamp = time()
+            self.timeStamp = timeStamp
 
             # 曲の長さを取得する
             track_len = float(ffmpeg.probe(track_path)[
@@ -76,12 +99,16 @@ class MusicPlayer:
             # 曲の長さだけスリープする
             await sleep(track_len)
 
-            while self.playing_track == track and self.guild.voice_client.is_playing():
+            while self.timeStamp == timeStamp and (not self.guild.voice_client is None) and self.guild.voice_client.is_playing():
                 await sleep(3)
 
             # 現在再生している曲が自分だったら次の曲を流す
-            if self.playing_track != track:
+            if self.timeStamp != timeStamp:
                 break
+
+
+def random_track():
+    return random.sample(TrackList, len(TrackList))
 
 
 def scan_file():
@@ -90,7 +117,7 @@ def scan_file():
         if p.is_file():
             filelist.append(".".join(p.name.split(".")[:-1]))
     TrackList.clear()
-    TrackList.extend(filelist)
+    TrackList.extend(sorted(filelist))
     return filelist
 
 

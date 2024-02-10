@@ -12,7 +12,7 @@ intents = Intents.all()
 intents.typing = False
 client = Client(intents=intents)
 appdir = os.path.dirname(os.path.abspath(__file__))
-musicPlayers = {}
+musicPlayers: dict[str, MusicPlayer] = {}
 
 
 @client.event
@@ -30,79 +30,29 @@ async def on_message(message: Message):
     if message.author == client.user:
         return
 
+    #!で始まらないものはコマンドではないので無視
     if not message.content.startswith("!"):
         return
-
-    if message.content.startswith("!tracklist"):
-        await message.channel.send(content="\n".join(sorted(TrackList))+"\n\n{}曲".format(len(TrackList)), delete_after=40)
-        return
-
-    if message.content.startswith("!random"):
-        if not message.author.voice:
-            return
-
-        # サーバーに対応したプレイヤーが無ければ生成
-        if not message.guild.id in musicPlayers.keys():
-            musicPlayers[message.guild.id] = MusicPlayer(
-                client, message.guild, 0.25)
-        else:
-            musicPlayers[message.guild.id].random()
-        # ボイスチャンネルに接続
-        await musicPlayers[message.guild.id].connect(message.author)
-        # 指定のファイルを再生
-        await musicPlayers[message.guild.id].playlist()
-        return
-
-    if message.content.startswith("!reload"):
-        if not message.author.voice:
-            return
-        scan_file()
-        return
-
-    #!stopで音声停止
-    if message.content.startswith("!stop"):
-        if not message.author.voice:
-            return
-
-        # サーバーに対応したプレイヤーがあれば停止
-        if message.guild.id in musicPlayers.keys():
-            musicPlayers[message.guild.id].stop()
-        return
-
-    #!disconnectで音声停止と切断
-    if message.content.startswith("!disconnect"):
-        if not message.author.voice:
-            return
-
-        # サーバーに対応したプレイヤーが無ければ切断して削除
-        if message.guild.id in musicPlayers.keys():
-            await musicPlayers[message.guild.id].disconnect()
-            musicPlayers.pop(message.guild.id)
-        return
-
-    #!skipで次の曲
-    if message.content.startswith("!skip"):
-        if not message.author.voice:
-            return
-        # サーバーに対応したプレイヤーが無ければ生成
-        if not message.guild.id in musicPlayers.keys():
-            return
-        # 次の曲を再生
-        await musicPlayers[message.guild.id].playlist()
 
     #!helpでヘルプ表示
     if message.content.startswith("!help"):
         context = ["!tracklist : 再生可能な曲を表示", "!random : ランダムなプレイリストを生成", "!skip : プレイリストの次の曲を再生",
-                   "!stop : 再生中の曲を停止", "!disconnect : VCから切断", "!pronunciation <読み> : 名前の読みを修正する", "!nowplaying : 現在再生中の曲を表示"]
-        await message.channel.send(content="\n".join(context), delete_after=120)
+                   "!stop : 再生中の曲を停止", "!disconnect : VCから切断", "!pronunciation <読み> : 名前の読みを修正する", "!nowplaying : 現在再生中の曲を表示",
+                   "!reload : 音楽フォルダを強制リロード", "!help : このヘルプを表示", "!previous : プレイリストの前の曲を再生", "!resume : 一時停止した曲を再生","!queue : プレイリストを表示"]
+        await message.channel.send(content="\n".join(sorted(context)), delete_after=120)
         return
 
-    #!nowplayingで現在再生中の曲を表示
-    if message.content.startswith("!nowplaying"):
-        # サーバーに対応したプレイヤーが無ければ切断して削除
-        if message.guild.id in musicPlayers.keys():
-            context = musicPlayers[message.guild.id].playing_track
-            await message.channel.send(content=context, delete_after=20)
+    # tracklistを表示
+    if message.content.startswith("!tracklist"):
+        context = format_track(TrackList)
+        context[-1] += "\n\n{}曲".format(len(TrackList))
+        for c in context:
+            await message.channel.send(content=c, delete_after=40)
+        return
+    # 音楽フォルダを強制リロード
+    if message.content.startswith("!reload"):
+        scan_file()
+        return
 
     #!pronunciationで読みの変更
     if message.content.startswith("!pronunciation"):
@@ -116,9 +66,79 @@ async def on_message(message: Message):
         tts_gen(str(message.author.display_name).replace(
             "/", ""), message.content[14:46].strip())
 
+    # これより下はVCに利用者が接続していないと利用不能
+    if not message.author.voice:
+        return
+
+    #!stopで音声停止
+    if message.content.startswith("!stop"):
+        # サーバーに対応したプレイヤーがあれば停止
+        if message.guild.id in musicPlayers.keys():
+            musicPlayers[message.guild.id].stop()
+        return
+
+    #!disconnectで音声停止と切断
+    if message.content.startswith("!disconnect"):
+        # サーバーに対応したプレイヤーがあれば切断して削除
+        if message.guild.id in musicPlayers.keys():
+            await musicPlayers[message.guild.id].disconnect()
+            musicPlayers.pop(message.guild.id)
+        return
+
+    #!nowplayingで現在再生中の曲を表示
+    if message.content.startswith("!nowplaying"):
+        # サーバーに対応したプレイヤーがあれば再生中の曲を表示
+        if message.guild.id in musicPlayers.keys():
+            context = musicPlayers[message.guild.id].now_playing()
+            if context is None:
+                context = "再生中の曲はありません"
+            else:
+                context = "再生中の曲は\nです。"+context
+            await message.channel.send(content=context, delete_after=20)
+
+    # これより下はVCに本botが接続している場合のみ利用可能
+    if message.guild.id in musicPlayers.keys():
+        #!skipで次の曲
+        if message.content.startswith("!skip"):
+            # 次の曲を再生
+            await musicPlayers[message.guild.id].playlist()
+
+        #!resumeで再開
+        if message.content.startswith("!resume"):
+            # 再生
+            await musicPlayers[message.guild.id].resume()
+
+        #!previousで前の曲に戻る
+        if message.content.startswith("!previous"):
+            # 再生
+            await musicPlayers[message.guild.id].previous()
+
+        #!queueでキューを表示
+        if message.content.startswith("!queue"):
+            # キューを取得
+            queue = musicPlayers[message.guild.id].queue
+            index = musicPlayers[message.guild.id].index
+            context = format_track(queue[index:])
+            for c in context:
+            # キューを表示
+                await message.channel.send(content=c, delete_after=20)
+
+    if message.content.startswith("!random"):
+        # サーバーに対応したプレイヤーがあればランダム再生
+        if not message.guild.id in musicPlayers.keys():
+            musicPlayers[message.guild.id] = MusicPlayer(
+                client, message.guild, 0.25)
+        else:
+            musicPlayers[message.guild.id].random()
+        # ボイスチャンネルに接続
+        await musicPlayers[message.guild.id].connect(message.author)
+        # 指定のファイルを再生
+        await musicPlayers[message.guild.id].playlist()
+        return
+
+    #!<曲名>で任意の曲を再生
     trackname = str(message.content).replace("!", "")
     if trackname in TrackList:
-        # サーバーに対応したプレイヤーが無ければ生成
         if not message.guild.id in musicPlayers.keys():
             musicPlayers[message.guild.id] = MusicPlayer(
                 client, message.guild, 0.25)
@@ -126,6 +146,31 @@ async def on_message(message: Message):
         await musicPlayers[message.guild.id].connect(message.author)
         # 指定のファイルを再生
         musicPlayers[message.guild.id].play(appdir+"/track/"+trackname+".aac")
+
+
+def format_track(track_list: list[str]) -> list[str]:
+    context_lines = []
+    # 2列で表示
+    for i in range(0, len(track_list), 2):
+        t1 = track_list[i][:20] #+("i"*max(0, 20-len(track_list[i])))
+        if i+1 < len(track_list):
+            t2 = track_list[i+1][:20]
+            context_lines.append("{}\t\t{}\n".format(t1, t2))
+        else:
+            context_lines.append("{}\t\t\n".format(t1))
+
+    # 2000文字で分割
+    context = []
+    index = 0
+    count = 0
+    for i in range(len(context_lines)):
+        count += len(context_lines[i])
+        if count > 2000:
+            context.append("".join(context_lines[index:i]))
+            index = i
+            count = len(context_lines[i])
+    context.append("".join(context_lines[index:]))
+    return context
 
 
 @client.event
@@ -148,8 +193,8 @@ async def on_voice_state_update(member: Member, before: VoiceState, after: Voice
                 if entry.name[-4:] != ".aac":
                     os.remove(appdir+"/voice/"+entry.name)
 
-    # VoiceChannelへの入室必須
-    if not member.voice:
+    # VoiceChannelへの入室していない、または人数が1人の場合は無視
+    if member.voice is None or len(after.channel.members) <= 1:
         return
     # beforeがミュートではないかつafterがミュートの場合はreturn
     if (not before.mute and after.mute) or (not before.self_mute and after.self_mute):
@@ -174,7 +219,7 @@ async def on_voice_state_update(member: Member, before: VoiceState, after: Voice
 
 
 # ディレクトリのサイズチェック
-def get_dir_size(path:str='.'):
+def get_dir_size(path: str = '.'):
     total = 0
     with os.scandir(path) as it:
         for entry in it:
@@ -191,7 +236,9 @@ else:
     print("GPT less mode")
 
 # ボイスの生成
-def tts_gen(name:str, pronunciation:str=""):
+
+
+def tts_gen(name: str, pronunciation: str = ""):
     yomi = name.strip()
     if (pronunciation != ""):
         yomi = pronunciation
